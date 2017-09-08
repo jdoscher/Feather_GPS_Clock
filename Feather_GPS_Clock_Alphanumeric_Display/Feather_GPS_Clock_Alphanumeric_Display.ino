@@ -1,6 +1,7 @@
-// GPS clock using test code from Adafruit's GPS code.
-// Original GPS code here: https://github.com/adafruit/Adafruit_GPS/tree/master/examples/GPS_HardwareSerial_Parsing
-// Core LED alphanumeric code here: https://github.com/adafruit/Adafruit_LED_Backpack/tree/master/examples/quadalphanum
+// This is a sketch to turn an Adafruit Feather (Arduino) with a GPS module and LED display into a clock
+//
+// Adafruit sample GPS code here: https://github.com/adafruit/Adafruit_GPS/tree/master/examples/GPS_HardwareSerial_Parsing
+// Reference LED alphanumeric code here: https://github.com/adafruit/Adafruit_LED_Backpack/tree/master/examples/quadalphanum
 //
 // Big thanks to Lady Ada from Adafruit and adafruit_support_carter from the Adafruit forums for help getting this going.
 //
@@ -9,7 +10,10 @@
 // Adafruit 0.54" Quad Alphanumeric FeatherWing Display --> https://www.adafruit.com/product/3129
 // Adafruit Feather M0 Basic Proto - ATSAMD21 Cortex M0 -----> http://amzn.to/2wpuWj5
 // 
-
+//  Written by Jay Doscher.  
+//  BSD license, all text above must be included in any redistribution
+// ****************************************************/
+ 
 #include "Adafruit_LEDBackpack.h"
 #include <Adafruit_GPS.h>
 #include <Adafruit_GFX.h>
@@ -41,18 +45,20 @@ uint32_t timer = millis();
 
 void setup()  
 {
+  //Print the source URL for the project in case you lose it
+  Serial.begin(115200);
+  Serial.println("GPS Clock by Jay Doscher from https://github.com/jdoscher/Feather_GPS_Clock/tree/master/Feather_GPS_Clock_Alphanumeric_Display");
+  
   alpha4.begin(0x70);  // pass in the address
 
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
   
-  // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
+  // Turn on RMC (recommended minimum) and GGA (fix data) including altitude
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   
   // Set the update rate
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-  // For the parsing code to work nicely and have time to sort thru the data, and
-  // print it out we don't suggest using anything higher than 1 Hz
 
   // Set the display brightness
   alpha4.setBrightness(displayBrightness);
