@@ -20,6 +20,14 @@
 #define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
 
+#include <avr/pgmspace.h>
+static const uint8_t source[] PROGMEM = {
+  #include "Feather_GPS_Clock_Alphanumeric_Display.ino"
+}
+
+// Display serial stuff once
+boolean displayOnce;
+    
 // Set the time format to either 12 or 24 hour format
 int timeFormat = 12;
 
@@ -47,7 +55,6 @@ void setup()
 {
   //Print the source URL for the project in case you lose it
   Serial.begin(115200);
-  Serial.println("GPS Clock by Jay Doscher from https://github.com/jdoscher/Feather_GPS_Clock/tree/master/Feather_GPS_Clock_Alphanumeric_Display");
   
   alpha4.begin(0x70);  // pass in the address
 
@@ -63,6 +70,7 @@ void setup()
   // Set the display brightness
   alpha4.setBrightness(displayBrightness);
   delay(500);
+  displayOnce = true;
 }
 
 // This is our lookup table for the characters 0-9
@@ -223,5 +231,10 @@ void loop()                     // run over and over again
     }
     // Write to the LED display
     alpha4.writeDisplay();
+
+    if (displayOnce == true) {
+    Serial.println("GPS Clock by Jay Doscher from https://github.com/jdoscher/Feather_GPS_Clock/tree/master/Feather_GPS_Clock_Alphanumeric_Display");
+    displayOnce = false;  
+    }
   }
 }
