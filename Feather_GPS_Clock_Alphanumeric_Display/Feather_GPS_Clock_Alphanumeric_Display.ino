@@ -101,118 +101,121 @@ void loop()                     // run over and over again
   // if millis() or timer wraps around, we'll just reset it
   if (timer > millis()) timer = millis();
 
-  // Clear the LED display
-  alpha4.clear();
-  
-  // DST offset checks. This would need overhauling to incorporate global DST
-  // logic, because the dates for start & end of DST are different
-  if (USDST == true) {
-    DSToffset = 0;
-    if ((GPS.month == 3) && (GPS.day > 12)) {
-      DSToffset = 1;
-    } else if ((GPS.month == 3) && (GPS.day == 12)) {
-      if (GPS.hour > 2){
-      DSToffset = 1;
+   // approximately every 2 seconds or so, print out the current stats
+  if (millis() - timer > 2000) {
+    timer = millis(); // reset the timer
+    // Clear the LED display
+    alpha4.clear();
+    
+    // DST offset checks. This would need overhauling to incorporate global DST
+    // logic, because the dates for start & end of DST are different
+    if (USDST == true) {
+      DSToffset = 0;
+      if ((GPS.month == 3) && (GPS.day > 12)) {
+        DSToffset = 1;
+      } else if ((GPS.month == 3) && (GPS.day == 12)) {
+        if (GPS.hour > 2){
+        DSToffset = 1;
+        }
+      } else if ((GPS.month > 3) && (GPS.month < 11)) {
+        DSToffset = 1;
+      } else if ((GPS.month == 11) && (GPS.day < 6)) { 
+        DSToffset = 1; 
+      } else if ((GPS.month == 11) && (GPS.day == 5)) {
+        if (GPS.hour < 2){
+        DSToffset = 1;
+        }      
       }
-    } else if ((GPS.month > 3) && (GPS.month < 11)) {
-      DSToffset = 1;
-    } else if ((GPS.month == 11) && (GPS.day < 6)) { 
-      DSToffset = 1; 
-    } else if ((GPS.month == 11) && (GPS.day == 5)) {
-      if (GPS.hour < 2){
-      DSToffset = 1;
-      }      
     }
-  }
-  // GMT offset (time zone) calculation here
-  // There may be a better way with Arduino, but this
-  // gets around Arduino weirdness with negative numbers
-  if (GMTnegative == true) {
-    correctedHour = (GPS.hour - GMToffset + DSToffset);
-  } else {
-    correctedHour = (GPS.hour + GMToffset);
-  }
-  if (correctedHour > 24) {
-    correctedHour = (correctedHour -24);
-  } else if (correctedHour < 0) {
-    correctedHour = (correctedHour +24);
-  }
+    // GMT offset (time zone) calculation here
+    // There may be a better way with Arduino, but this
+    // gets around Arduino weirdness with negative numbers
+    if (GMTnegative == true) {
+      correctedHour = (GPS.hour - GMToffset + DSToffset);
+    } else {
+      correctedHour = (GPS.hour + GMToffset);
+    }
+    if (correctedHour > 24) {
+      correctedHour = (correctedHour -24);
+    } else if (correctedHour < 0) {
+      correctedHour = (correctedHour +24);
+    }
+    
+    // Hour calculations for 24 hour time
+    // Here we apply corrected hour to 24 hour time
+      // We use the getNumber() function because the alpha display
+    // can't take decimals from the GPS readings directly  
+    if (timeFormat == 24) {
+      if (correctedHour > 19) {
+        alpha4.writeDigitRaw(0, getNumber(2));
+        alpha4.writeDigitRaw(1, getNumber(correctedHour-20));
+      } else if ((correctedHour > 9) && (correctedHour < 20)) {
+        alpha4.writeDigitRaw(0, getNumber(1));
+        alpha4.writeDigitRaw(1, getNumber(correctedHour-10));
+      } else if (correctedHour < 10) {
+        alpha4.writeDigitRaw(1, getNumber(correctedHour));
+      }
+    }
   
-  // Hour calculations for 24 hour time
-  // Here we apply corrected hour to 24 hour time
+    // Hour calculations for 12 hour time
+    // Here we apply corrected hour to 12 hour time
     // We use the getNumber() function because the alpha display
-  // can't take decimals from the GPS readings directly  
-  if (timeFormat == 24) {
-    if (correctedHour > 19) {
-      alpha4.writeDigitRaw(0, getNumber(2));
-      alpha4.writeDigitRaw(1, getNumber(correctedHour-20));
-    } else if ((correctedHour > 9) && (correctedHour < 20)) {
-      alpha4.writeDigitRaw(0, getNumber(1));
-      alpha4.writeDigitRaw(1, getNumber(correctedHour-10));
-    } else if (correctedHour < 10) {
-      alpha4.writeDigitRaw(1, getNumber(correctedHour));
+    // can't take decimals from the GPS readings directly  
+    if (timeFormat == 12) {
+      int twelvehour;
+      if (correctedHour > 12) {
+        twelvehour = (correctedHour - 12);
+      } else if (correctedHour < 13) {
+        twelvehour = (correctedHour);
+      } else if (correctedHour == 0) {
+        twelvehour = 12;
+      }
+      if (twelvehour > 9) {
+        alpha4.writeDigitRaw(0, getNumber(1));
+        twelvehour = twelvehour-10;
+        alpha4.writeDigitRaw(1, getNumber(twelvehour));
+      } else if (twelvehour < 10) {
+        alpha4.writeDigitRaw(1, getNumber(twelvehour));
+      }
+    }    
+  
+    // Minute calculations and character assignment
+    // We use the getNumber() function because the alpha display
+    // can't take decimals from the GPS readings directly    
+    if (GPS.minute < 10) {
+      alpha4.writeDigitRaw(2, getNumber(0));
+      alpha4.writeDigitRaw(3, getNumber(GPS.minute));
+    } else if ((GPS.minute > 9) && (GPS.minute < 20)) {
+      alpha4.writeDigitRaw(2, getNumber(1));
+      alpha4.writeDigitRaw(3, getNumber(GPS.minute-10));
+    } else if ((GPS.minute > 19) && (GPS.minute < 30)) {
+      alpha4.writeDigitRaw(2, getNumber(2));
+      alpha4.writeDigitRaw(3, getNumber(GPS.minute-20));
+    } else if ((GPS.minute > 29) && (GPS.minute < 40)) {
+      alpha4.writeDigitRaw(2, getNumber(3));
+      alpha4.writeDigitRaw(3, getNumber(GPS.minute-30));
+    } else if ((GPS.minute > 39) && (GPS.minute < 50)) {
+      alpha4.writeDigitRaw(2, getNumber(4));
+      alpha4.writeDigitRaw(3, getNumber(GPS.minute-40));
+    } else if (GPS.minute > 49) {
+      alpha4.writeDigitRaw(2, getNumber(5));
+      alpha4.writeDigitRaw(3, getNumber(GPS.minute-50));
+    } else if (GPS.minute == 0) {
+      alpha4.writeDigitRaw(2, getNumber(0));
+      alpha4.writeDigitRaw(3, getNumber(0));
     }
-  }
-
-  // Hour calculations for 12 hour time
-  // Here we apply corrected hour to 12 hour time
-  // We use the getNumber() function because the alpha display
-  // can't take decimals from the GPS readings directly  
-  if (timeFormat == 12) {
-    int twelvehour;
-    if (correctedHour > 12) {
-      twelvehour = (correctedHour - 12);
-    } else if (correctedHour < 13) {
-      twelvehour = (correctedHour);
-    } else if (correctedHour == 0) {
-      twelvehour = 12;
+  
+    // Simple status reading if we're not getting values from the GPS
+    // F242 is for a great Belgian electronic music group
+    // https://en.wikipedia.org/wiki/Front_242 
+    if ((GPS.hour == 0) && (GPS.minute == 0)) {
+        alpha4.clear();
+        alpha4.writeDigitAscii(0, 'F');
+        alpha4.writeDigitAscii(1, '2');
+        alpha4.writeDigitAscii(2, '4');
+        alpha4.writeDigitAscii(3, '2');
     }
-    if (twelvehour > 9) {
-      alpha4.writeDigitRaw(0, getNumber(1));
-      twelvehour = twelvehour-10;
-      alpha4.writeDigitRaw(1, getNumber(twelvehour));
-    } else if (twelvehour < 10) {
-      alpha4.writeDigitRaw(1, getNumber(twelvehour));
-    }
-  }    
-
-  // Minute calculations and character assignment
-  // We use the getNumber() function because the alpha display
-  // can't take decimals from the GPS readings directly    
-  if (GPS.minute < 10) {
-    alpha4.writeDigitRaw(2, getNumber(0));
-    alpha4.writeDigitRaw(3, getNumber(GPS.minute));
-  } else if ((GPS.minute > 9) && (GPS.minute < 20)) {
-    alpha4.writeDigitRaw(2, getNumber(1));
-    alpha4.writeDigitRaw(3, getNumber(GPS.minute-10));
-  } else if ((GPS.minute > 19) && (GPS.minute < 30)) {
-    alpha4.writeDigitRaw(2, getNumber(2));
-    alpha4.writeDigitRaw(3, getNumber(GPS.minute-20));
-  } else if ((GPS.minute > 29) && (GPS.minute < 40)) {
-    alpha4.writeDigitRaw(2, getNumber(3));
-    alpha4.writeDigitRaw(3, getNumber(GPS.minute-30));
-  } else if ((GPS.minute > 39) && (GPS.minute < 50)) {
-    alpha4.writeDigitRaw(2, getNumber(4));
-    alpha4.writeDigitRaw(3, getNumber(GPS.minute-40));
-  } else if (GPS.minute > 49) {
-    alpha4.writeDigitRaw(2, getNumber(5));
-    alpha4.writeDigitRaw(3, getNumber(GPS.minute-50));
-  } else if (GPS.minute == 0) {
-    alpha4.writeDigitRaw(2, getNumber(0));
-    alpha4.writeDigitRaw(3, getNumber(0));
+    // Write to the LED display
+    alpha4.writeDisplay();
   }
-
-  // Simple status reading if we're not getting values from the GPS
-  // F242 is for a great Belgian electronic music group
-  // https://en.wikipedia.org/wiki/Front_242 
-  if ((GPS.hour == 0) && (GPS.minute == 0)) {
-      alpha4.clear();
-      alpha4.writeDigitAscii(0, 'F');
-      alpha4.writeDigitAscii(1, '2');
-      alpha4.writeDigitAscii(2, '4');
-      alpha4.writeDigitAscii(3, '2');
-  }
-  // Write to the LED display
-  alpha4.writeDisplay();
-  timer = millis(); // reset the timer
 }
