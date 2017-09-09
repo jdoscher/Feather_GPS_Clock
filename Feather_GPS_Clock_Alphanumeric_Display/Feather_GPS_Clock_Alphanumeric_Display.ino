@@ -20,11 +20,6 @@
 #define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
 
-#include <avr/pgmspace.h>
-static const uint8_t source[] PROGMEM = {
-  #include "Feather_GPS_Clock_Alphanumeric_Display.ino"
-}
-
 // Display serial stuff once
 boolean displayOnce;
     
