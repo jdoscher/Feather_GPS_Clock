@@ -1,3 +1,5 @@
+// This is a sketch to turn an Adafruit Feather (Arduino) with a GPS module and LED display into a clock
+//
 // GPS clock using test code from Adafruit's GPS and I2C 7-segment LED backpack.
 // Original GPS code here: https://github.com/adafruit/Adafruit_GPS/tree/master/examples/GPS_HardwareSerial_Parsing
 // Original LED Backpack code here: https://github.com/adafruit/Adafruit-LED-Backpack-Library
@@ -8,6 +10,10 @@
 // Adafruit Ultimate GPS FeatherWing ------------------------> http://amzn.to/2wpKIdT
 // Adafruit 0.56" 4-Digit 7-Segment Display w/ FeatherWing --> https://www.adafruit.com/product/3109
 // Adafruit Feather M0 Basic Proto - ATSAMD21 Cortex M0 -----> http://amzn.to/2wpuWj5
+// 
+//  Written by Jay Doscher.  
+//  BSD license, all text above must be included in any redistribution
+// ****************************************************/
 
 #include <Wire.h>
 #include "Adafruit_LEDBackpack.h"
@@ -17,7 +23,13 @@ Adafruit_GPS GPS(&GPSSerial);
 
 // Display serial stuff once
 boolean displayOnce;
-    
+
+// boolean to keep track of the blinking colon
+boolean colonOn;
+
+// Set this to false if you don't want the colon to blink
+boolean blinkColon = true;
+      
 // Set the time format to either 12 or 24 hour format
 int timeFormat = 12;
 
@@ -31,6 +43,9 @@ boolean USDST = true;
 // Our variable for the changing the time based on DST and time zone
 int correctedHour;
 int DSToffset;
+
+// Set a brightness value from 1-10
+int displayBrightness = 10;
 
 // Which our gets displayed, is an output of the 24 or 12 hour subroutines
 int displayHour;
@@ -49,6 +64,7 @@ void setup()
   matrix.begin(0x70); 
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
+  matrix.setBrightness(displayBrightness);
   
   // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
@@ -58,6 +74,8 @@ void setup()
 
   delay(500);
   displayOnce = true;
+  colonOn = true;
+
 }
 
 void loop()                     // run over and over again
@@ -131,7 +149,19 @@ void loop()                     // run over and over again
     }    
         
     matrix.print((displayHour)+ GPS.minute);
-    matrix.drawColon(true);
+
+    // Alternate the colon between on and off each loop, but only if enabled via blinkColon
+    if (blinkColon == true) {
+      if (colonOn == true) {
+        matrix.drawColon(true);
+        colonOn = false;
+      } else {
+      matrix.drawColon(false);
+      colonOn = true;
+      }
+    }
+    
+    // Write the display and to serial once
     matrix.writeDisplay();
     if (displayOnce == true) {
       Serial.println("GPS Clock by Jay Doscher from https://github.com/jdoscher/Feather_GPS_Clock/tree/master/Feather_GPS_Clock_7_Segment_Display");
