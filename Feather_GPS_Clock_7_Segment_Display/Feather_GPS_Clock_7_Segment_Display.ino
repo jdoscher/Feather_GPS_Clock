@@ -134,7 +134,7 @@ void loop()                     // run over and over again
     matrix.drawColon(true);
     matrix.writeDisplay();
     if (displayOnce == true) {
-      Serial.println("GPS Clock by Jay Doscher from https://github.com/jdoscher/Feather_GPS_Clock/tree/master/Feather_GPS_Clock_Alphanumeric_Display");
+      Serial.println("GPS Clock by Jay Doscher from https://github.com/jdoscher/Feather_GPS_Clock/tree/master/Feather_GPS_Clock_7_Segment_Display");
       displayOnce = false;  
     }
     timer = millis(); // reset the timer
